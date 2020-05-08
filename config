@@ -1,0 +1,4 @@
+Host github.com
+    IdentityFile %USERPROFILE%\.ssh\samhiggs.metabox.github.id_rsa
+Host homeserver
+    IdentityFile %USERPROFILE%\.ssh\samhiggs.metabox.homeserver.id_rsa
