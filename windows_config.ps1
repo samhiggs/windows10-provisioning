@@ -1,5 +1,15 @@
 #----------------------------------------------------------------------------
 $python_version = "3.8.2"
+
+#-------------------------------------------------------------------------
+Write-Host ""
+Write-Host "Checking for powershell updates..."
+Invoke-WebRequest -Uri `
+    https://github.com/PowerShell/PowerShell/releases/download/v7.0.0/PowerShell-7.0.0-win-x64.msi`
+    -OutFile .\PS7.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I PS7.msi /quiet'
+
+refreshenv
+
 # TODO: Make Script Idempotent
 powershell.exe -NoLogo -NoProfile -Command 'Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber'
 #-----------------------------------------------------------------------------
@@ -74,6 +84,11 @@ Write-Host "Enable Windows 10 Developer Mode..." -ForegroundColor Green
 Write-Host "------------------------------------" -ForegroundColor Green
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+
+#------------------------------------------------------------------------------
+Write-Host ""
+Write-Host "Disable Hibernation and Remove Hibernation Mode" -ForegroundColor Green
+powercfg.exe /hibernate off
 
 # -----------------------------------------------------------------------------
 Write-Host ""
@@ -157,14 +172,33 @@ Write-Host "------------------------------------" -ForegroundColor Green
 
 if (-Not (Check-Command -cmdname 'pyenv')) {
     pyenv install 
-else {
+} else {
     $env:Path += ";%USERPROFILE%\.pyenv\pyenv-win\bin;%USERPROFILE%\.pyenv\pyenv-win\shims;"
     pyenv install 3.8.2
 }
+
+setx PATH "%PATH%;C:\Python38\Scripts"
+refreshenv
+
 #-------------------------------------------------------------------------
-Invoke-WebRequest -Uri `
-    https://github.com/PowerShell/PowerShell/releases/download/v7.0.0/PowerShell-7.0.0-win-x64.msi`
-    -OutFile .\PS7.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I PS7.msi /quiet'
+Write-Host ""
+Write-Host "Check that docker related things are installed..."
+if (Check-Command -cmdname 'docker-compose') {
+    Write-Host "Docker compose is installed"
+    Write-Host "Version $(docker-compose --version)"
+    
+} else {
+    Write-Host "Docker Compose is not found...Installing"
+    choco install docker-compose
+}
+if (Check-Command -cmdname 'docker-machine') {
+    Write-Host "Docker machine is installed"
+    Write-Host "Version $(docker-machine --version)"
+    
+} else {
+    Write-Host "Docker machine is not found...Installing"
+    choco install docker-machine
+}
 
 #-------------------------------------------------------------------------
 Write-Host "Configuring SSH for Github"
